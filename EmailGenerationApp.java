@@ -6,7 +6,7 @@
 
 /**
  *
- * @author POOJI
+ * @author POOJITHA
  */
 import javax.swing.*;
 import java.awt.*;
