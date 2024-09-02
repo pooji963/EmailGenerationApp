@@ -8,13 +8,10 @@
  *
  * @author POOJITHA
  */
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.Scanner;
 
 class Employee {
     private String name;
@@ -50,7 +47,7 @@ class EmailGenerator {
     private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     private static final int PASSWORD_LENGTH = 8;
 
-    public static String generateEmail(String name, List<String> existingEmails) {
+    public static String generateEmail(String name) {
         String[] nameParts = name.split(" ");
         if (nameParts.length < 2) {
             throw new IllegalArgumentException("Please enter both first and last names.");
@@ -58,14 +55,7 @@ class EmailGenerator {
 
         StringBuilder emailBuilder = new StringBuilder();
         emailBuilder.append(nameParts[0].charAt(0)).append(nameParts[1]).append(DOMAIN);
-        String email = emailBuilder.toString().toLowerCase();
-
-        int count = 1;
-        while (existingEmails.contains(email)) {
-            email = emailBuilder.toString().toLowerCase().replace(DOMAIN, "") + count + DOMAIN;
-            count++;
-        }
-        return email;
+        return emailBuilder.toString().toLowerCase();
     }
 
     public static String generatePassword() {
@@ -80,11 +70,13 @@ class EmailGenerator {
         return passwordBuilder.toString();
     }
 
+    
     public static String checkPasswordStrength(String password) {
         boolean hasUpperCase = false;
         boolean hasLowerCase = false;
         boolean hasDigit = false;
 
+        
         if (password.length() >= 8) {
             for (char ch : password.toCharArray()) {
                 if (Character.isUpperCase(ch)) hasUpperCase = true;
@@ -103,106 +95,71 @@ class EmailGenerator {
     }
 }
 
-public class EmailGenerationApp extends JFrame {
+public class EmailGenerationApp {
     private List<Employee> employees;
 
     public EmailGenerationApp() {
         employees = new ArrayList<>();
-        setupUI();
     }
 
-    private void setupUI() {
-        setTitle("Email Generation App");
-        setSize(400, 300);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
+    public void addEmployee(String name) {
+        try {
+            String email = EmailGenerator.generateEmail(name);
+            System.out.println("Generated Email ID: " + email);
+            String randomPassword = EmailGenerator.generatePassword();
+            System.out.println("Generated Random Password: " + randomPassword);
+            
+            Scanner scanner = new Scanner(System.in);
+            System.out.print("Would you like to change the password? (yes/no): ");
+            String changePassword = scanner.nextLine();
 
-        Container container = getContentPane();
-        container.setLayout(new GridLayout(6, 2));
-
-        JLabel nameLabel = new JLabel("Enter Name (First Last):");
-        JTextField nameField = new JTextField();
-
-        JLabel emailLabel = new JLabel("Generated Email ID:");
-        JTextField emailField = new JTextField();
-        emailField.setEditable(false);
-
-        JLabel passwordLabel = new JLabel("Generated Password:");
-        JTextField passwordField = new JTextField();
-        passwordField.setEditable(false);
-
-        JButton generateButton = new JButton("Generate");
-        JButton addButton = new JButton("Add Employee");
-        JButton showButton = new JButton("Show Employees");
-
-        JTextArea displayArea = new JTextArea(10, 30);
-        displayArea.setEditable(false);
-        JScrollPane scrollPane = new JScrollPane(displayArea);
-
-        generateButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String name = nameField.getText();
-                List<String> existingEmails = new ArrayList<>();
-                for (Employee emp : employees) {
-                    existingEmails.add(emp.getEmailId());
-                }
-
-                try {
-                    String email = EmailGenerator.generateEmail(name, existingEmails);
-                    String randomPassword = EmailGenerator.generatePassword();
-
-                    emailField.setText(email);
-                    passwordField.setText(randomPassword);
-                } catch (IllegalArgumentException ex) {
-                    JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                }
+            String finalPassword;
+            if (changePassword.equalsIgnoreCase("yes")) {
+                do {
+                    System.out.print("Enter your desired password: ");
+                    finalPassword = scanner.nextLine();
+                    String strength = EmailGenerator.checkPasswordStrength(finalPassword);
+                    System.out.println("Password Strength: " + strength);
+                    
+                    if (strength.equals("Weak")) {
+                        System.out.println("Please choose a stronger password.");
+                    }
+                } while (EmailGenerator.checkPasswordStrength(finalPassword).equals("Weak"));
+            } else {
+                finalPassword = randomPassword; // Use random password if the user chooses not to change it
             }
-        });
 
-        addButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String name = nameField.getText();
-                String email = emailField.getText();
-                String password = passwordField.getText();
+            Employee employee = new Employee(name, email, finalPassword);
+            employees.add(employee);
+            System.out.println("Employee added: " + employee);
+        } catch (IllegalArgumentException e) {
+            System.out.println(e.getMessage());
+        }
+    }
 
-                Employee employee = new Employee(name, email, password);
-                employees.add(employee);
-
-                JOptionPane.showMessageDialog(null, "Employee added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-            }
-        });
-
-        showButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                displayArea.setText("");
-                for (Employee emp : employees) {
-                    displayArea.append(emp.toString() + "\n");
-                }
-            }
-        });
-
-        container.add(nameLabel);
-        container.add(nameField);
-        container.add(emailLabel);
-        container.add(emailField);
-        container.add(passwordLabel);
-        container.add(passwordField);
-        container.add(generateButton);
-        container.add(addButton);
-        container.add(showButton);
-        container.add(scrollPane);
+    public void displayEmployees() {
+        System.out.println("Employee List:");
+        for (Employee emp : employees) {
+            System.out.println(emp);
+        }
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                new EmailGenerationApp().setVisible(true);
-            }
-        });
+        EmailGenerationApp app = new EmailGenerationApp();
+        Scanner scanner = new Scanner(System.in);
+        String continueInput;
+
+        do {
+            System.out.print("Enter employee name (First Last): ");
+            String name = scanner.nextLine();
+            app.addEmployee(name);
+
+            System.out.print("Do you want to add another employee? (yes/no): ");
+            continueInput = scanner.nextLine();
+        } while (continueInput.equalsIgnoreCase("yes"));
+
+        app.displayEmployees();
+        scanner.close();
     }
 }
 
